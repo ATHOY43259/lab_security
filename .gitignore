@@ -13,6 +13,10 @@ finetune/yolo_face/*.cache
 __pycache__/
 *.pyc
 
+# Jupyter autosave checkpoints (created locally when opening notebooks
+# in JupyterLab; not meaningful content)
+.ipynb_checkpoints/
+
 # Stray empty artifact directory from an early timing test
 /runs/
 

@@ -160,6 +160,7 @@ rec_df = pd.read_csv(ROOT / "ablation_results" / "ablation_results_recognition.c
 print("Recognition ablation (610 LFW identities, 1,643 probes):")
 pivot = rec_df.pivot(index="lighting", columns="config", values="accuracy")
 pivot = pivot.reindex(["bright", "normal", "dim", "dark"])
+pivot = pivot[["Baseline (HOG + Euclidean-cosine)", "ArcFace (InsightFace)", "ArcFace + TD-FALE-GAN"]]
 display(pivot)"""))
 
 cells.append(nbf.v4.new_code_cell("""\
@@ -183,7 +184,7 @@ cells.append(nbf.v4.new_markdown_cell("""\
    but hurts in bright and extreme-dark conditions, and hurts detection
    on small/distant faces across the board. This was measured, not
    assumed, and required finding and fixing several real implementation
-   bugs along the way (see `paper/main.tex`, Section VI,
+   bugs along the way (see `paper/main.tex`, Section VII,
    "Reproducibility and integrity").
 
 Full methodology and discussion: see `paper/main.tex` (compile in
