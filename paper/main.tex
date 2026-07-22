@@ -188,7 +188,8 @@ magnitude as an implicit quality signal so that low-quality
 less confident region of the embedding space instead of
 contributing an over-confident, unreliable match. Neither
 direction is exercised here, since this work uses ArcFace as a
-frozen off-the-shelf extractor by design (Section~III-E), but
+frozen off-the-shelf extractor by design
+(Section~\ref{sec:facerecpipeline}), but
 both indicate that the embedding space itself, not only the
 enrollment/verification protocol built on top of it, is a live
 target for illumination-robustness improvements. Classical
@@ -296,7 +297,7 @@ et al.~\cite{ali2022} and Putra et al.~\cite{putra2023} do not
 evaluate low-light conditions at all. \textit{Addressed by:} this
 work makes low-light robustness the central research question,
 with an enhancement stage designed specifically for it and four
-lighting conditions evaluated explicitly (Sections~III-B,
+lighting conditions evaluated explicitly (Sections~\ref{sec:proposedarch},
 \ref{sec:verifprotocol}).
 
 \textbf{Gap 2 --- illumination-sensitive recognizers deployed
@@ -320,7 +321,8 @@ omission the broader literature has flagged as a general risk
 demonstrating it empirically. \textit{Addressed by:} TD-FALE-GAN
 adds a detection-guided loss term and this work measures its
 downstream effect directly, revealing that the effect is
-condition-dependent and sometimes negative (Section~VI) rather
+condition-dependent and sometimes negative
+(Section~\ref{sec:discussion}) rather
 than assuming it is uniformly positive.
 
 \textbf{Gap 4 --- no prior system reports a negative or
@@ -332,7 +334,7 @@ reports that its own proposed enhancement stage \textit{harms}
 detection and, in bright and extreme-dark conditions, recognition
 accuracy, together with the specific implementation defects that
 had to be found and corrected to obtain trustworthy numbers
-(Section~VI, ``Reproducibility and integrity'').
+(Section~\ref{sec:discussion}, ``Reproducibility and integrity'').
 
 \textbf{Gap 5 --- no controlled, multi-condition external
 validation.} None of the three prior systems evaluate across a
@@ -401,6 +403,7 @@ suitable for verification; this separation is revisited as a
 limitation in Section~\ref{sec:separatedatasets}.
 
 \subsection{Proposed Architecture: TD-FALE-GAN}
+\label{sec:proposedarch}
 The enhancement generator is designed around the requirements of
 a face-recognition security pipeline rather than generic image
 quality, and comprises three components.
@@ -689,6 +692,7 @@ fine-tuned end-to-end on DARK FACE.}
 \end{figure}
 
 \subsection{Face Recognition Pipeline}
+\label{sec:facerecpipeline}
 Because ArcFace's published models are trained on millions of
 images across tens of thousands of identities, retraining its
 backbone on LFW's 610 identities was judged infeasible and
@@ -953,38 +957,50 @@ producing these numbers. An early implementation applied a
 hardcoded penalty that artificially inflated ArcFace's apparent
 dark-condition robustness relative to the baseline; this was
 removed in favor of real pixel-level degradation. Separately, the
-shared-threshold problem described in Section~\ref{sec:verifprotocol} was corrected
+shared-threshold problem described in Section~\ref{sec:facerecpipeline} was corrected
 using per-method calibrated thresholds. The reported results
 reflect both corrections.
 
-Table~\ref{tab:farfrr} reports the security-critical error rates,
-computed directly from the genuine/impostor trials underlying
-Table~\ref{tab:recognition}. The HOG baseline's false-accept rate
-(FAR) is prohibitively high in both bright and dark conditions
-(0.608 and 0.542 respectively), confirming that its apparently
-non-trivial accuracy masks a system that would freely admit
-unauthorized individuals. ArcFace maintains a far lower FAR in
-both conditions (0.217 bright, 0.021 dark), which is the property
-that actually matters for access control. Its false-reject rate,
-however, rises sharply from 0.038 (bright) to 0.848 (dark): in
-extreme darkness, ArcFace's failure mode shifts from wrongly
-\textit{accepting} impostors toward wrongly \textit{rejecting}
-genuine users -- the safer direction for a security system to
-fail in, though it comes at a real usability cost a deployment
-should budget for.
+Table~\ref{tab:farfrr} reports the security-critical error rates
+across all four lighting conditions, computed directly from the
+genuine/impostor trials underlying Table~\ref{tab:recognition}.
+Thresholds were calibrated once per method
+(Section~\ref{sec:facerecpipeline}) and held fixed across all
+four conditions; the widening gap between FAR and FRR under
+degradation is therefore itself a measure of condition
+sensitivity, not an artifact of re-calibration. The HOG baseline's
+false-accept rate (FAR) is prohibitively high across every
+condition (54--87\%), confirming that its apparently non-trivial
+accuracy masks a system that would freely admit unauthorized
+individuals. ArcFace maintains a far lower FAR throughout
+(2--23\%), which is the property that actually matters for access
+control -- though even ArcFace's roughly 20\% FAR in bright,
+normal, and dim conditions is still too high for real
+access-control deployment at this operating threshold; a stricter
+threshold would lower it further at the cost of raising FRR
+beyond the 2.8--4.0\% already observed in those conditions, a
+trade the table makes explicit rather than hiding behind a single
+aggregate number. In the dark condition specifically, ArcFace's
+failure mode shifts from wrongly \textit{accepting} impostors
+(FAR falls to 0.021) toward wrongly \textit{rejecting} genuine
+users (FRR rises to 0.848) -- the safer direction for a security
+system to fail in, though it comes at a real usability cost a
+deployment should budget for.
 
 \begin{table}[!t]
-\caption{False-Accept and False-Reject Rates at Bright and Dark Endpoints}
+\caption{False-Accept and False-Reject Rates by Lighting Condition}
 \label{tab:farfrr}
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{FAR (bright)} & \textbf{FAR (dark)} &
-\textbf{FRR (bright)} & \textbf{FRR (dark)} \\
+& \multicolumn{2}{c}{\textbf{HOG baseline}} & \multicolumn{2}{c}{\textbf{ArcFace}} \\
+\textbf{Lighting} & \textbf{FAR} & \textbf{FRR} & \textbf{FAR} & \textbf{FRR} \\
 \midrule
-HOG baseline & 0.608 & 0.542 & 0.848 & 0.898 \\
-ArcFace      & 0.217 & 0.021 & 0.038 & 0.848 \\
+Bright & 0.608 & 0.848 & 0.217 & 0.038 \\
+Normal & 0.820 & 0.777 & 0.226 & 0.040 \\
+Dim    & 0.867 & 0.724 & 0.200 & 0.028 \\
+Dark   & 0.542 & 0.898 & 0.021 & 0.848 \\
 \bottomrule
 \end{tabular}%
 }
@@ -992,6 +1008,7 @@ ArcFace      & 0.217 & 0.021 & 0.038 & 0.848 \\
 
 % ============================================================
 \section{Discussion}
+\label{sec:discussion}
 \textbf{Deep-learned recognition dominates the classical
 baseline.} ArcFace achieves 0.87--0.91 accuracy versus the HOG
 baseline's 0.20--0.28 across all conditions except the most
