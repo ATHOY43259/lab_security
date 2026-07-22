@@ -1,0 +1,5 @@
+names:
+  0: face
+path: C:\Users\ASUS\lab_security_real\finetune\yolo_face
+train: images/train
+val: images/val
