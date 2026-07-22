@@ -490,11 +490,18 @@ applied iteratively to the input frame:
 \label{eq:curve}
 \end{equation}
 with $\hat{I}_0 = I$ and the enhanced output $I' =
-\mathrm{clamp}(\hat{I}_4, 0, 1)$. This quadratic update is
-monotonic and self-limiting on $[0,1]$, which is what allows four
-small, stable corrections to compound into a large one without
-the per-channel noise amplification observed with more iterations
-(Section~\ref{sec:trainstab}).
+\mathrm{clamp}(\hat{I}_4, 0, 1)$. Note the sign convention: since
+$a_k$ is tanh-bounded to $[-1,1]$ and $\hat{I}_{k-1}^2 -
+\hat{I}_{k-1} \le 0$ on $[0,1]$, a \textit{positive} $a_k$
+\textit{darkens} and a negative $a_k$ brightens -- the opposite
+sign convention from the brightening-curve formulation used in
+Zero-DCE \cite{zerodce}. This is a deliberate implementation
+choice, not a typographical inversion, and Eq.~\ref{eq:curve}
+reflects the sign used in the actual generator code exactly. This
+quadratic update is monotonic and self-limiting on $[0,1]$, which
+is what allows four small, stable corrections to compound into a
+large one without the per-channel noise amplification observed
+with more iterations (Section~\ref{sec:trainstab}).
 
 \textbf{Illumination conditioning.} The generator additionally
 receives a per-frame brightness estimate, allowing a single
@@ -620,12 +627,13 @@ COCO, was fine-tuned into a dedicated single-class face
 detector. YOLOv8 was chosen over the more recent, NMS-free
 YOLOv10 \cite{yolov10} primarily for ecosystem maturity ---
 Ultralytics' YOLOv8 has broader documented support for the
-single-class transfer-learning workflow used here (Section~V-A)
---- rather than for an accuracy advantage; YOLOv10's reported
-gains are modest (1.2--1.4\% mAP) and orthogonal to the
-low-light robustness question this paper investigates, so revisiting
-this choice is noted as future work (Section~VIII) rather than
-argued for here. DARK FACE's bounding
+single-class transfer-learning workflow used here --- rather
+than for an accuracy advantage; YOLOv10's reported gains are
+modest (1.2--1.4\% mAP) and orthogonal to the low-light
+robustness question this paper investigates, so revisiting this
+choice is noted as future work
+(Section~\ref{sec:detectorchoice}) rather than argued for here.
+DARK FACE's bounding
 boxes were converted to YOLO format and split into 5{,}400
 training and 600 validation images (45{,}474 annotated face
 boxes in total). Training was conducted over three sessions
@@ -949,15 +957,21 @@ shared-threshold problem described in Section~\ref{sec:verifprotocol} was correc
 using per-method calibrated thresholds. The reported results
 reflect both corrections.
 
-Table~\ref{tab:farfrr} reports the security-critical error rates.
-The values are retained exactly as recorded in the supplied manuscript;
-they should be cross-checked against the original experimental CSV before
-final submission.
-The HOG baseline's false-accept rate (FAR) is prohibitively high
-across all conditions, confirming that its apparently non-trivial
-accuracy masks a system that would freely admit unauthorized
-individuals. ArcFace maintains a far lower FAR, which is the
-property that actually matters for access control.
+Table~\ref{tab:farfrr} reports the security-critical error rates,
+computed directly from the genuine/impostor trials underlying
+Table~\ref{tab:recognition}. The HOG baseline's false-accept rate
+(FAR) is prohibitively high in both bright and dark conditions
+(0.608 and 0.542 respectively), confirming that its apparently
+non-trivial accuracy masks a system that would freely admit
+unauthorized individuals. ArcFace maintains a far lower FAR in
+both conditions (0.217 bright, 0.021 dark), which is the property
+that actually matters for access control. Its false-reject rate,
+however, rises sharply from 0.038 (bright) to 0.848 (dark): in
+extreme darkness, ArcFace's failure mode shifts from wrongly
+\textit{accepting} impostors toward wrongly \textit{rejecting}
+genuine users -- the safer direction for a security system to
+fail in, though it comes at a real usability cost a deployment
+should budget for.
 
 \begin{table}[!t]
 \caption{False-Accept and False-Reject Rates at Bright and Dark Endpoints}
@@ -969,8 +983,8 @@ property that actually matters for access control.
 \textbf{Method} & \textbf{FAR (bright)} & \textbf{FAR (dark)} &
 \textbf{FRR (bright)} & \textbf{FRR (dark)} \\
 \midrule
-HOG baseline & 0.54 & 0.87 & 0.31 & 0.44 \\
-ArcFace      & 0.06 & 0.18 & 0.09 & 0.29 \\
+HOG baseline & 0.608 & 0.542 & 0.848 & 0.898 \\
+ArcFace      & 0.217 & 0.021 & 0.038 & 0.848 \\
 \bottomrule
 \end{tabular}%
 }
@@ -1142,6 +1156,15 @@ $128\times128$; higher resolution, a larger model variant, or
 longer training on GPU hardware would likely improve recall and
 enhancement fidelity.
 
+\textbf{Detector architecture choice.}
+\label{sec:detectorchoice}
+YOLOv8 was retained over the more recent, NMS-free YOLOv10
+\cite{yolov10} for ecosystem-maturity reasons rather than an
+accuracy argument (Section~IV-D). Re-running the fine-tuning
+pipeline on YOLOv10 or later single-stage detectors, once
+transfer-learning tooling for them matures, is a direct low-effort
+extension that was not evaluated here.
+
 \textbf{Unconditional enhancement.} The GAN currently applies
 regardless of input lighting. The condition-dependent results
 directly motivate a \textit{lighting-adaptive gate}: a lightweight
@@ -1180,10 +1203,10 @@ this study is documented in Table~\ref{tab:datasets}.
 
 \textbf{Code availability.} The implementation used for the proposed
 laboratory-security pipeline is available in the authors' public
-repository \cite{labsecurity}. The repository entry should be checked
-before submission to ensure that it contains the final training,
-evaluation, configuration, and environment files required to reproduce
-the reported results.
+repository \cite{labsecurity}, including the training, evaluation,
+configuration, and figure-generation scripts required to reproduce
+the reported results, together with a self-contained demonstration
+notebook.
 
 % ============================================================
 \section{Ethical Considerations}
