@@ -28,15 +28,15 @@
 \title{TD-FALE-GAN: Task-Driven Low-Light Face Enhancement
 for Smart Laboratory Security}
 
-\author{\IEEEauthorblockN{Athoy Kanti Ray}
-\IEEEauthorblockA{American International University-Bangladesh (AIUB)\\
-Email: athoykanti.roy1612@gmail.com}}
+\author{\IEEEauthorblockN{Athoy Kanti Ray\IEEEauthorrefmark{1} and Sarker Pritom\IEEEauthorrefmark{1}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}American International University-Bangladesh (AIUB)\\
+Emails: athoykanti.roy1612@gmail.com, pritomsarker999@gmail.com}}
 
 \maketitle
 
 \begin{tcolorbox}[colback=gray!10,colframe=black,title=Contributions,fonttitle=\bfseries]
-This work was independently designed, implemented, evaluated, and
-written by Athoy Kanti Ray. Specifically: the TD-FALE-GAN
+\textbf{Athoy Kanti Ray} designed, implemented, and evaluated the
+system and wrote the manuscript. Specifically: the TD-FALE-GAN
 architecture, training pipeline, and loss design (Section
 \ref{sec:proposedarch}); the YOLOv8 face-detector fine-tuning
 (Section \ref{sec:detectorfinetuning}); the ArcFace
@@ -45,15 +45,23 @@ enrollment/verification pipeline and threshold calibration
 ablation studies and all reported figures/tables (Section
 \ref{sec:results}); and the identification and correction of the
 five implementation defects documented in Section
-\ref{sec:discussion} ("Reproducibility and integrity") were all
-performed by the sole author. AI assistance (Claude, Anthropic)
-was used as a coding and writing aid throughout, and separately as
-an independent referee to produce the AI Review Report in this
-submission package (Appendix~\ref{app:review}); all experimental
-results, code, and reported numbers were verified by the author
-against the underlying logs, checkpoints, and CSV outputs before
-inclusion, consistent with the reproducibility discussion in
-Section~\ref{sec:discussion}.
+\ref{sec:discussion} ("Reproducibility and integrity").
+
+\textbf{Sarker Pritom} contributed to repository maintenance,
+committing an update (GitHub commit \texttt{029f208}, ``Update
+ablationfileanddemo'') that restored the project's core analysis
+and demonstration scripts --- \texttt{ablation\_study\_detection.py},
+\texttt{ablation\_study\_recognition.py}, \texttt{build\_demo\_notebook.py},
+\texttt{demo\_live\_detection.py}, \texttt{demo\_live\_recognition.py},
+and the figure-generation scripts --- to the shared repository.
+
+AI assistance (Claude, Anthropic) was used as a coding and writing
+aid throughout, and separately as an independent referee to
+produce the AI Review Report in this submission package
+(Appendix~\ref{app:review}); all experimental results, code, and
+reported numbers were verified against the underlying logs,
+checkpoints, and CSV outputs before inclusion, consistent with the
+reproducibility discussion in Section~\ref{sec:discussion}.
 \end{tcolorbox}
 
 \begin{abstract}
@@ -1469,7 +1477,7 @@ results, and reported numbers were independently verified by the
 author against the underlying logs, checkpoints, and CSV outputs
 before inclusion (Appendix~\ref{app:evidence}).
 
-\textbf{Conflicts of Interest.} The author declares no conflict
+\textbf{Conflicts of Interest.} The authors declare no conflict
 of interest.
 
 % ============================================================
