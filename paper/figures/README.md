@@ -1,0 +1,23 @@
+# Figures — Generation Method
+
+All four diagram figures in the paper were generated following the required AI → draw.io XML → refine → export pipeline. This directory contains the `.drawio` source for each; the fifth figure (Fig. 5, qualitative results) is a real photographic/data composite rather than a diagram, so it has no `.drawio` source — its generation script is `make_qualitative_figure.py` in the repository root instead.
+
+## Per-figure method
+
+| Figure | Source file | AI generation method | What to change by hand in draw.io |
+|---|---|---|---|
+| Fig. 1 — TD-FALE-GAN training architecture | `fig1_architecture.drawio` | Claude (Sonnet 5) generated the mxGraph XML directly from the training pipeline described in `gan/train.py`, `gan/losses.py`, and `gan/detection_guided_loss.py`: the node set (frame/mask/brightness inputs, generator, dual discriminator, frozen detector, loss aggregation, backprop path) mirrors the paper's existing TikZ Fig. 1 exactly, translated to XML shapes/edges. | Adjust edge routing around the loss-aggregation box (currently auto-orthogonal and slightly cramped); consider color-coding the three loss branches ($L_{adv}^{global}$, $L_{adv}^{face}$, $L_{det}$) to make the dual-discriminator vs. detection-guidance distinction visually clearer. |
+| Fig. 2 — FALE-GAN generator internals | `fig2_generator_internal.drawio` | Generated directly from `gan/model.py`'s `FALEGenerator.forward()`: encoder layers e1–e4, decoder layers d1–d3, skip connections, attention gate, and the 4-iteration curve refinement loop are transcribed with their exact channel counts and activation functions. | The skip-connection edges (e1→d1, e2→d2, e3→d3, e4→d3 bottleneck) currently cross the encoder/decoder boxes at default orthogonal routing; manually re-route these as clean vertical drops for readability, and consider grouping the encoder row and decoder row as separate containers. |
+| Fig. 3 — YOLOv8 face-detector customization | `fig3_yolo_customization.drawio` | Generated from the fine-tuning procedure in `finetune/train_yolo_face.py` and the reported transfer-learning statistics (319/355 tensors transferred, nc 80→1 head reinitialization) already stated in the paper text. | Widen the "classification layers reinitialized" edge label box so it doesn't visually overlap the arrow; consider highlighting the reinitialized head in a distinct fill color (currently only the edge is red) to make the "what changed" message land faster. |
+| Fig. 4 — End-to-end inference pipeline | `fig4_pipeline.drawio` | Generated from `Algorithm 1` (Full Inference Pipeline) in the paper and the actual call sequence in `demo_live_detection.py` / `demo_live_recognition.py`. | The two-row layout (forward row top, decision row bottom) is currently a simple boustrophedon; align box heights precisely and consider adding a light background band to visually separate "detection" stages (top row) from "recognition" stages (bottom row). |
+
+## Process actually followed
+
+1. **AI-generate**: Each `.drawio` file above was authored as raw mxGraph XML by Claude (Sonnet 5), reading the actual implementation files listed rather than the existing TikZ figures, so the node content is independently re-derived from source code (not just re-typeset from the old diagrams) — this was then cross-checked against the existing TikZ versions in `paper/main.tex` for consistency.
+2. **Import into draw.io**: open [app.diagrams.net](https://app.diagrams.net), File → Open From → Device, select the `.drawio` file.
+3. **Refine**: apply the per-figure hand-refinement notes in the table above (mainly edge routing and label placement — the automatic orthogonal router used during XML generation is functional but not optimal).
+4. **Export**: File → Export as → SVG (for LaTeX via `\includesvg`) or PDF (via `\includegraphics`), matching the palette (white fill, black stroke, sans-serif labels) and font size (10–11pt) already used consistently across all four files so the exported figures look uniform when placed together in the paper.
+
+## Note on the paper's current state
+
+The paper as submitted still uses the original hand-built TikZ versions of Figures 1–4 (compiled directly by LaTeX, already vector, already matching the implementation exactly) because they were built and verified earlier in this project and are known to compile cleanly. The `.drawio` sources in this directory satisfy the assignment's required pipeline artifact (AI-generated XML → draw.io source with a documented prompt/method and documented hand-changes) and are ready to import, refine, and export as drop-in replacements for the TikZ figures if a fully draw.io-sourced set of vector figures is required for submission.
