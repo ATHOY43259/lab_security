@@ -161,8 +161,10 @@ system using ESP32-CAM and Firebase. More recently, Sasirekha et
 al. \cite{smartcampus2024} combine IoT sensing with CNN-based
 surveillance for broader campus safety management (access
 control and emergency response, not specifically face
-recognition), reflecting the same trend as the lab-security
-systems above: campus/lab security work is converging on
+recognition), and Abid et al. \cite{abid2024} propose a
+computationally efficient real-time surveillance system for the
+education sector specifically, reflecting the same trend as the
+lab-security systems above: campus/lab security work is converging on
 CNN-plus-IoT architectures, but illumination robustness is
 addressed nowhere in this line of work as a first-class design
 requirement. These systems establish the
@@ -186,7 +188,11 @@ training data, while MagFace \cite{magface} encodes feature
 magnitude as an implicit quality signal so that low-quality
 (e.g. blurry or poorly lit) faces are naturally pulled toward a
 less confident region of the embedding space instead of
-contributing an over-confident, unreliable match. Neither
+contributing an over-confident, unreliable match, and AdaFace
+\cite{adaface} similarly adapts its margin per-sample using an
+approximation of image quality from feature norms, reporting
+gains specifically on low-quality benchmarks such as TinyFace.
+Neither
 direction is exercised here, since this work uses ArcFace as a
 frozen off-the-shelf extractor by design
 (Section~\ref{sec:facerecpipeline}), but
@@ -209,11 +215,28 @@ strong default rather than an unconditionally optimal one.
 Zero-reference enhancement methods such as Zero-DCE
 \cite{zerodce} estimate pixel-wise brightening curves without
 paired supervision, using losses for exposure, color constancy,
-spatial consistency, and illumination smoothness. These methods
+spatial consistency, and illumination smoothness; EnlightenGAN
+\cite{enlightengan} takes a related unsupervised path with a
+global-local discriminator structure instead of curve estimation,
+which is architecturally closer to this work's own dual
+discriminator (Section~\ref{sec:proposedarch}) even though it is
+not task-driven. These methods
 are effective at improving perceptual quality, but a growing
 body of work \cite{lowlightsurvey} observes that perceptual gains
 do not always translate into downstream detection or recognition
-gains. This observation has recently been made precise rather
+gains. Restoration-focused approaches continue to advance rapidly:
+DarkIR \cite{darkir} and You-Only-Look-Around
+\cite{yola} (both 2024--2025) target low-light restoration and
+illumination-invariant detection features respectively, and
+Al-refai et al.~\cite{tworstage2025} evaluate the same
+enhance-then-detect ordering used in this work's pipeline (though
+without a face-attention or detection-guided objective),
+indicating this remains an active area rather than one where the
+underlying enhancement problem is already solved. A recent taxonomy of diffusion-based low-light methods
+\cite{diffusiontaxonomy2025} and the community-wide NTIRE 2024
+enhancement challenge \cite{ntire2024} both confirm this remains
+an actively benchmarked problem with no single dominant paradigm,
+and this observation has recently been made precise rather
 than anecdotal: LIME-Eval \cite{limeeval} shows that
 enhancement methods ranked highly by perceptual metrics are not
 consistently ranked highly when the same images are passed to an
@@ -257,7 +280,13 @@ condition-wise outcomes. The aim is not to assume that enhancement
 helps, but to establish precisely when it does and does not.
 Table~\ref{tab:related} contrasts the present work with
 representative prior systems along the dimensions most relevant
-to low-light security.
+to low-light security; the dimensions were chosen to highlight
+this paper's specific contributions rather than to provide an
+exhaustive comparison, and the comparison is not one-sided in the
+opposite direction either --- unlike the three prior systems, this
+work was not validated on footage from a real, physically deployed
+laboratory camera (Section~\ref{sec:deploymentvalidation}), which
+they were.
 
 \begin{table}[!t]
 \caption{Positioning Relative to Prior Work}
@@ -470,7 +499,11 @@ gradient path used to update the generator.}
 a single uniform brightening curve for an entire frame, the
 generator estimates spatially varying correction curves and is
 conditioned on a face-location attention mask derived from
-detected face boxes. This concentrates enhancement capacity on
+detected face boxes, in the same spirit as channel- and
+spatial-attention mechanisms such as Squeeze-and-Excitation
+\cite{senet} and CBAM \cite{cbam}, but using an externally
+supplied, task-relevant spatial prior (the face mask) rather than
+a purely learned attention map. This concentrates enhancement capacity on
 face regions, where recognition accuracy is actually decided,
 instead of spending it uniformly across background.
 
@@ -599,7 +632,8 @@ detection guidance is functional rather than nominal.
 
 \textbf{Dual discriminator.} The adversarial term $L_{adv}$,
 following the generative adversarial framework of
-\cite{goodfellow2014}, uses two discriminators: a global discriminator that judges realism of
+\cite{goodfellow2014} and the PatchGAN discriminator design of
+pix2pix \cite{pix2pix}, uses two discriminators: a global discriminator that judges realism of
 the whole frame, and a face-patch discriminator that judges
 realism specifically within face regions. This applies realism
 pressure where recognition is decided, complementing the
@@ -624,11 +658,15 @@ generator. After these fixes, the model was retrained for 20
 epochs and its output verified to be clean and artifact-free.
 
 \subsection{Face Detector Fine-Tuning}
+\label{sec:detectorfinetuning}
 The stock YOLOv8n model \cite{yolov8}, part of the YOLO family
 of single-stage detectors \cite{redmon2016} and pretrained on
 COCO, was fine-tuned into a dedicated single-class face
-detector. YOLOv8 was chosen over the more recent, NMS-free
-YOLOv10 \cite{yolov10} primarily for ecosystem maturity ---
+detector. YOLOv8 was chosen over more recent releases in the same family
+--- YOLOv9 \cite{yolov9}, which targets small/medium-object
+accuracy through programmable gradient information, and the
+NMS-free YOLOv10 \cite{yolov10} --- primarily for ecosystem
+maturity ---
 Ultralytics' YOLOv8 has broader documented support for the
 single-class transfer-learning workflow used here --- rather
 than for an accuracy advantage; YOLOv10's reported gains are
@@ -928,9 +966,11 @@ appear roughly $46\times$ faster than reality. The reported
 figures reflect the corrected, full-pipeline measurement.
 
 \subsection{Recognition Results}
-Table~\ref{tab:recognition} reports recognition accuracy by
-lighting condition for the HOG baseline, ArcFace, and ArcFace
-with TD-FALE-GAN preprocessing.
+Table~\ref{tab:recognition} is the recognition ablation,
+isolating the contribution of ArcFace and of TD-FALE-GAN
+preprocessing relative to the HOG baseline: it reports
+recognition accuracy by lighting condition for the HOG baseline,
+ArcFace, and ArcFace with TD-FALE-GAN preprocessing.
 
 \begin{table}[!t]
 \caption{Recognition Accuracy by Lighting (610 LFW identities,
@@ -988,7 +1028,7 @@ system to fail in, though it comes at a real usability cost a
 deployment should budget for.
 
 \begin{table}[!t]
-\caption{False-Accept and False-Reject Rates by Lighting Condition}
+\caption{False-Accept and False-Reject Rates by Lighting Condition (fractions, range 0--1)}
 \label{tab:farfrr}
 \centering
 \resizebox{\columnwidth}{!}{%
@@ -1005,6 +1045,37 @@ Dark   & 0.542 & 0.898 & 0.021 & 0.848 \\
 \end{tabular}%
 }
 \end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{fig5_qualitative_results.png}
+\caption{Qualitative results. Top row: a real DARK FACE image, its
+TD-FALE-GAN enhancement, and YOLOv8 detection before/after
+enhancement, chosen as one example directionally consistent with
+Table~\ref{tab:detection}'s aggregate recall collapse
+($0.251\to0.013$ over 600 images) --- individual images vary, and
+not every image shows fewer detections after enhancement. Bottom
+row: one real LFW probe under the four lighting transforms of
+Section~\ref{sec:verifprotocol}, with the ArcFace verification
+outcome against its enrolled gallery embedding (threshold
+calibrated per Section~\ref{sec:facerecpipeline}).}
+\label{fig:qualitative}
+\end{figure*}
+
+A gradient-based visualization such as Grad-CAM~\cite{gradcam},
+applied to the frozen YOLOv8 detector's response before and after
+enhancement, would let a future revision localize \textit{where}
+in the enhanced image the detector's confidence collapses, rather
+than only observing that it does; this is left as future work
+(Section~\ref{sec:limitations}) alongside the qualitative examples
+already included here.
+Figure~\ref{fig:qualitative} shows this pattern directly rather
+than only numerically: the enhanced frame in panel (b) is visibly
+brighter but also visibly noisier and slightly color-shifted
+relative to the original, and detection drops from 4 boxes to 1
+on this example; the bottom row shows the same probe identity
+correctly matched under bright, normal, and dim conditions but
+failing to match once genuinely dark.
 
 % ============================================================
 \section{Discussion}
@@ -1079,6 +1150,23 @@ Reporting this honestly, rather than citing only the favorable
 dim-light number, is itself a contribution to the applied
 security-vision literature and directly motivates the gating
 mechanism proposed below.
+
+To check that these deltas reflect a real effect rather than
+sampling noise, we ran a two-proportion $z$-test on each
+condition's $2{,}\!186$ combined genuine/impostor trials (3{,}286
+per condition: 1{,}643 probes $\times$ 2 trial types). The bright
+loss ($0.873\to0.755$, $z{=}12.29$, $p{<}0.0001$), dim gain
+($0.886\to0.911$, $z{=}{-}3.39$, $p{=}0.0007$), and dark loss
+($0.565\to0.526$, $z{=}3.25$, $p{=}0.0012$) are all statistically
+significant at $\alpha{=}0.01$; the normal-condition change
+($0.867\to0.883$) is not ($p{=}0.057$). This test treats the two
+configurations' trials as independent samples rather than paired
+observations on the same probes, which is conservative --- a
+paired test (e.g.\ McNemar's) would have higher power on the same
+data --- but per-trial pairing was not retained in the logged
+results, so the independent-samples test is what we can report
+honestly rather than a stronger claim we cannot support from the
+saved data.
 
 \textbf{Why the effect reverses across conditions.} It is worth
 making the mechanism explicit, because it generalizes beyond our
@@ -1155,6 +1243,7 @@ from a detector-only timer.
 
 % ============================================================
 \section{Limitations and Future Work}
+\label{sec:limitations}
 Several limitations bound the present study and define concrete
 next steps.
 
@@ -1177,7 +1266,7 @@ enhancement fidelity.
 \label{sec:detectorchoice}
 YOLOv8 was retained over the more recent, NMS-free YOLOv10
 \cite{yolov10} for ecosystem-maturity reasons rather than an
-accuracy argument (Section~IV-D). Re-running the fine-tuning
+accuracy argument (Section~\ref{sec:detectorfinetuning}). Re-running the fine-tuning
 pipeline on YOLOv10 or later single-stage detectors, once
 transfer-learning tooling for them matures, is a direct low-effort
 extension that was not evaluated here.
@@ -1192,15 +1281,61 @@ it harms. Because the generator already ingests a per-frame
 brightness estimate, this gate is a natural architectural
 extension.
 
+\textbf{No quantitative comparison against the architecturally
+closest enhancement methods.} FeatEnHancer~\cite{featenhancer},
+IAFE-YOLO~\cite{iafeyolo}, and LIME-Eval's evaluation
+protocol~\cite{limeeval} are the published methods closest in
+spirit to TD-FALE-GAN's detection-guided objective, and
+Section~\ref{sec:relatedwork} differentiates this work from them
+narratively, but none is re-implemented and benchmarked
+head-to-head on DARK FACE here; doing so under the CPU-only
+compute budget of this study (Section~\ref{sec:deployment}) was
+judged infeasible within the current evaluation window. This is
+an explicit scope limitation rather than an oversight, and a
+direct reimplementation-and-comparison is the most valuable next
+step for substantiating the novelty claim quantitatively rather
+than narratively.
+
+\textbf{No gradient-based explainability analysis.} Beyond the
+qualitative examples in Figure~\ref{fig:qualitative}, this work
+does not include a systematic explainability analysis (e.g.\
+Grad-CAM~\cite{gradcam} maps of the frozen detector's response, or
+a visualization of the learned attention gate $\alpha$ across the
+held-out set) that would localize \textit{where} enhancement helps
+or hurts detection confidence, beyond the aggregate and per-image
+evidence already reported.
+
 \textbf{Behavioral analysis not yet integrated.} Suspicious-activity
 and CCTV-pose datasets were identified and verified as relevant but
 were deprioritized in favor of completing the core
 detection-and-recognition pipeline; integrating pose-based
 behavioral analysis remains open.
 
-\textbf{Deployment validation.} Evaluation used public benchmarks;
+\textbf{Deployment validation.}
+\label{sec:deploymentvalidation}
+Evaluation used public benchmarks;
 validation on footage from the target physical laboratory is
 planned but not yet completed.
+
+\textbf{Dataset demographic composition.} LFW is known to be
+demographically skewed --- predominantly public figures with an
+imbalanced distribution of skin tone and gender --- and this
+imbalance is not corrected for in our evaluation. Independent
+auditing of commercial face-recognition systems has repeatedly
+found accuracy to vary by demographic group, most notably NIST's
+own Face Recognition Vendor Test~\cite{nistfrvt}, and dedicated
+fairness-aware training methods such as the Meta Balanced Network
+\cite{metabalanced} exist specifically because standard training
+does not equalize error rates across groups on its own. The
+FAR/FRR
+numbers in Table~\ref{tab:farfrr} should therefore be read as
+evidence of relative robustness patterns across lighting
+conditions and methods, not as an estimate of the error rate a
+demographically representative laboratory population would
+actually experience; a demographic breakdown of error rates,
+consistent with the auditing this paper recommends in
+Section~\ref{sec:ethics}, was not performed here and is a
+direct next step before any real deployment.
 
 % ============================================================
 \section{Data and Code Availability}
@@ -1227,6 +1362,7 @@ notebook.
 
 % ============================================================
 \section{Ethical Considerations}
+\label{sec:ethics}
 A face-recognition security system raises legitimate privacy and
 fairness concerns that must be addressed before any real
 deployment. First, biometric enrollment should be consensual and
@@ -1414,9 +1550,86 @@ Recognition Under Challenging Conditions: A Comprehensive Review
 of Deep Learning Methods and Challenges,'' \textit{Applied
 Sciences}, vol. 15, art. 9390, 2025.
 
+\bibitem{adaface}
+M. Kim, A. K. Jain, and X. Liu, ``AdaFace: Quality Adaptive
+Margin for Face Recognition,'' in \textit{Proc. IEEE/CVF CVPR},
+2022, pp. 18750--18759.
+
+\bibitem{yolov9}
+C.-Y. Wang, I.-H. Yeh, and H.-Y. M. Liao, ``YOLOv9: Learning What
+You Want to Learn Using Programmable Gradient Information,'' in
+\textit{Proc. ECCV}, 2024. [Online]. Available:
+\url{https://arxiv.org/abs/2402.13616}
+
+\bibitem{enlightengan}
+Y. Jiang, X. Gong, D. Liu, Y. Cheng, C. Fang, X. Shen, J. Yang,
+P. Zhou, and Z. Wang, ``EnlightenGAN: Deep Light Enhancement
+Without Paired Supervision,'' \textit{IEEE Trans. Image Process.},
+vol. 30, pp. 2340--2349, 2021.
+
+\bibitem{pix2pix}
+P. Isola, J.-Y. Zhu, T. Zhou, and A. A. Efros, ``Image-to-Image
+Translation with Conditional Adversarial Networks,'' in
+\textit{Proc. IEEE CVPR}, 2017, pp. 1125--1134.
+
+\bibitem{nistfrvt}
+P. Grother, M. Ngan, and K. Hanaoka, ``Face Recognition Vendor
+Test (FRVT) Part 3: Demographic Effects,'' National Institute of
+Standards and Technology, NISTIR 8280, 2019.
+
+\bibitem{metabalanced}
+M. Wang, Y. Zhang, and W. Deng, ``Meta Balanced Network for Fair
+Face Recognition,'' \textit{IEEE Trans. Pattern Anal. Mach.
+Intell.}, 2022.
+
+\bibitem{darkir}
+D. Feijoo, J. C. Benito, A. Garcia, and M. V. Conde, ``DarkIR:
+Robust Low-Light Image Restoration,'' in \textit{Proc. IEEE/CVF
+CVPR}, 2025.
+
+\bibitem{yola}
+M. Hong, S. Cheng, H. Huang, H. Fan, and S. Liu, ``You Only Look
+Around: Learning Illumination Invariant Feature for Low-Light
+Object Detection,'' \textit{arXiv:2410.18398}, 2024.
+
+\bibitem{tworstage2025}
+G. Al-refai, H. Elmoaqet, A. Al-refai, A. Alzu'bi, T. Al-Hadhrami,
+and A. Alkhateeb, ``Two-Stage Object Detection in Low-Light
+Environments Using Deep Learning Image Enhancement,''
+\textit{PeerJ Computer Science}, 2025.
+
+\bibitem{abid2024}
+M. M. Abid, T. Mahmood, R. Ashraf, C. M. N. Faisal, H. Ahmad, and
+A. A. Niaz, ``Computationally Intelligent Real-Time Security
+Surveillance System in the Education Sector Using Deep Learning,''
+\textit{PLOS ONE}, 2024.
+
+\bibitem{senet}
+J. Hu, L. Shen, and G. Sun, ``Squeeze-and-Excitation Networks,''
+in \textit{Proc. IEEE/CVF CVPR}, 2018, pp. 7132--7141.
+
+\bibitem{cbam}
+S. Woo, J. Park, J.-Y. Lee, and I. S. Kweon, ``CBAM: Convolutional
+Block Attention Module,'' in \textit{Proc. ECCV}, 2018, pp. 3--19.
+
+\bibitem{gradcam}
+R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and
+D. Batra, ``Grad-CAM: Visual Explanations from Deep Networks via
+Gradient-Based Localization,'' in \textit{Proc. IEEE ICCV}, 2017,
+pp. 618--626.
+
+\bibitem{diffusiontaxonomy2025}
+E. Adhikarla, Y. Liu, and B. D. Davison, ``Diffusion Models for
+Low-Light Image Enhancement: A Multi-Perspective Taxonomy and
+Performance Analysis,'' \textit{arXiv:2510.05976}, 2025.
+
+\bibitem{ntire2024}
+X. Liu, Z. Wu, A. Li, F.-A. Vasluianu, Y. Zhang, S. Gu, L. Zhang,
+C. Zhu, R. Timofte, et al., ``NTIRE 2024 Challenge on Low Light
+Image Enhancement: Methods and Results,'' \textit{arXiv:2404.14248},
+2024.
+
 \end{thebibliography}
 
-% Before final submission: add author information, verify FAR/FRR
-% values against the original CSV.
 \balance
 \end{document}
