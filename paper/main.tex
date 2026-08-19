@@ -28,15 +28,15 @@
 \title{TD-FALE-GAN: Task-Driven Low-Light Face Enhancement
 for Smart Laboratory Security}
 
-\author{\IEEEauthorblockN{[YOUR NAME]}
-\IEEEauthorblockA{[YOUR AFFILIATION / DEPARTMENT / UNIVERSITY]\\
-Email: [YOUR EMAIL]}}
+\author{\IEEEauthorblockN{Athoy Kanti Ray}
+\IEEEauthorblockA{American International University-Bangladesh (AIUB)\\
+Email: athoykanti.roy1612@gmail.com}}
 
 \maketitle
 
 \begin{tcolorbox}[colback=gray!10,colframe=black,title=Contributions,fonttitle=\bfseries]
 This work was independently designed, implemented, evaluated, and
-written by [YOUR NAME]. Specifically: the TD-FALE-GAN
+written by Athoy Kanti Ray. Specifically: the TD-FALE-GAN
 architecture, training pipeline, and loss design (Section
 \ref{sec:proposedarch}); the YOLOv8 face-detector fine-tuning
 (Section \ref{sec:detectorfinetuning}); the ArcFace
@@ -1598,7 +1598,7 @@ memory.
 \textbf{Finding 2 (no qualitative results).} Added
 Figure~\ref{fig:qualitative}, generated from the actual trained
 checkpoints and real bundled sample data (script:
-\texttt{make\_qualitative\_figure.py}), showing a real DARK FACE
+\texttt{make\_\allowbreak qualitative\_\allowbreak figure.py}), showing a real DARK FACE
 image, its enhancement, before/after detection boxes, and one real
 LFW probe under all four lighting transforms with its ArcFace
 verification outcome. The example image was chosen, after checking
@@ -1619,7 +1619,7 @@ than leaving it implicit.
 
 \textbf{Finding 4 (significance testing).} Computed a
 two-proportion $z$-test on the actual per-condition trial counts
-in \texttt{ablation\_results\_recognition.csv} (3{,}286 trials per
+in \texttt{ablation\_\allowbreak results\_\allowbreak recognition.csv} (3{,}286 trials per
 condition). Results: bright loss $p<0.0001$, dim gain $p=0.0007$,
 dark loss $p=0.0012$ (all significant at $\alpha=0.01$); normal
 change $p=0.057$ (not significant), reported honestly rather than
@@ -1730,20 +1730,24 @@ Appendix~\ref{app:response}.
 \item \textbf{Training logs and checkpoints.} The YOLOv8
 fine-tuning's ten-hour stall (Section~\ref{sec:detectorfinetuning})
 was diagnosed directly from training-log timestamps, not inferred
-after the fact; the resulting checkpoints
-(\texttt{finetune/runs/face\_finetune\_v3/weights/best.pt}) and the
-enhancement generator's checkpoint
-(\texttt{gan/checkpoints/fale\_generator.pt}) are the exact weights
-used to produce every number in Tables~\ref{tab:val}--\ref{tab:farfrr}
-and Figure~\ref{fig:qualitative} --- Figure~\ref{fig:qualitative}
-was regenerated from these checkpoints specifically for this
-revision, not staged from a prior run.
+after the fact; the resulting detector checkpoint (repository
+path: \texttt{finetune/\allowbreak runs/\allowbreak
+face\_\allowbreak finetune\_\allowbreak v3/\allowbreak
+weights/\allowbreak best.pt}) and the enhancement generator's
+checkpoint (repository path: \texttt{gan/\allowbreak
+checkpoints/\allowbreak fale\_\allowbreak generator.pt}) are the
+exact weights used to produce every number in
+Tables~\ref{tab:val}--\ref{tab:farfrr} and
+Figure~\ref{fig:qualitative} --- Figure~\ref{fig:qualitative} was
+regenerated from these checkpoints specifically for this revision,
+not staged from a prior run.
 \item \textbf{Raw ablation outputs.} All headline numbers trace to
-\texttt{ablation\_results/ablation\_results\_detection.csv} and
-\texttt{ablation\_results/ablation\_results\_recognition.csv},
-included in the repository; the significance test added in response
-to Finding 4 (Appendix~\ref{app:response}) was computed directly
-from the trial counts in the latter file.
+two CSV files in the repository's \texttt{ablation\_results/}
+folder (\texttt{ablation\_\allowbreak results\_\allowbreak
+detection.csv} and \texttt{ablation\_\allowbreak
+results\_\allowbreak recognition.csv}); the significance test
+added in response to Finding 4 (Appendix~\ref{app:response}) was
+computed directly from the trial counts in the latter file.
 \item \textbf{Documented bug-fix trail.} Five distinct
 implementation defects, discovered and corrected during this
 project rather than in a single clean run, are named individually
